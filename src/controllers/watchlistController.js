@@ -47,4 +47,72 @@ const addToWatchList = async (req, res) => {
         })
 }
 
-export { addToWatchList }
+const deleteFromWatchList = async (req, res) => {
+    const watchlistItem = await prisma.watchlistItem.findUnique({
+        where: {
+            id: req.params.id
+        }
+    })
+    if (!watchlistItem) {
+        return res.status(404).json({
+            error: "Watchlist item not found"
+        })
+    }
+    if(watchlistItem.userId !== req.user.id) {
+        return res.status(403).json({
+            error: "Unauthorized to delete this watchlist item"
+        })
+    }
+    await prisma.watchlistItem.delete({
+        where: {
+            id: req.params.id
+        }
+    })
+    res.status(200).json({
+        status: "success",
+        message: "Movie removed from watchlist"
+    })
+}
+
+const updateWatchListItem = async (req, res) => {
+    const {status, rating, notes} = req.body
+    const watchlistItem = await prisma.watchlistItem.findUnique({
+        where:{
+            id:req.params.id
+        }
+    })
+    if (!watchlistItem){
+        return res.status(404).json({
+            error:"Watchlist item not found"
+        })
+    }
+    if(watchlistItem.userId !== req.user.id) {
+        return res.status(403).json({
+            error: "Unauthorized to update this watchlist item"
+        })
+    }
+    const updataData = {}
+    if(status) {
+        updataData.status = status.toUpperCase()
+    }
+    if(rating) {
+        updataData.rating = rating
+    }
+    if(notes) {
+        updataData.notes = notes
+    }
+    const updatedItem = await prisma.watchlistItem.update({
+        where: {
+            id: req.params.id
+        },
+        data: updataData
+    })
+    res.status(200).json({
+        status: "success",
+        data: {
+            watchlistItem: updatedItem
+        }
+    })
+}
+
+export { addToWatchList, deleteFromWatchList, updateWatchListItem }
